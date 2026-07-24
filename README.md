@@ -1,27 +1,50 @@
 # SafeDrop
-SafeDrop is a Spigot plugin that allows players to safely drop items while protecting their inventory from accidental item drops.
+
+SafeDrop protects valuable items from accidental drops on modern Paper servers.
+This VeridianMC-maintained fork is based on the original
+[CodedRed SafeDrop](https://github.com/CodedRed-Spigot/SafeDrop) project.
+
+## Requirements
+
+- Paper 1.21.11 or newer
+- Java 21 or newer
 
 ## Features
-* SafeDrop allows players to drop items if they confirm the action, preventing accidental item drops.
-* Admins can enable or disable SafeDrop for individual players or for the entire server.
-* Players can turn SafeDrop on or off themselves.
-* SafeDrop is fully customizable with text and action bar messages.
 
-## Installation
-1. Download the latest version of SafeDrop from [SpigotMC](https://www.spigotmc.org/resources/safedrop-safely-drop-items.72585/).
-2. Move the downloaded .jar file to your server's "plugins" folder.
-3. Restart your server.
+- Confirms the exact item being dropped, rather than granting a temporary
+  player-wide bypass
+- Protects all items or selected valuable-item categories
+- Configurable tools, weapons, armour, enchanted items, named items, shulker
+  boxes, spawn eggs and individual materials
+- Optional sneak-and-drop bypass for deliberate drops
+- Chat and action-bar feedback using MiniMessage
+- Per-player preferences stored in YAML, SQLite or MySQL
+- Player-friendly toggle, status and help commands
+- Command tab completion
 
-## Usage
-To use SafeDrop, simply drop an item as you normally would. If SafeDrop is enabled for your player, a confirmation message will be displayed in the chat and/or action bar. You can then confirm or cancel the item drop. To turn SafeDrop on or off, use the /safedrop on or /safedrop off command.
+## Commands
 
-For admins, the /safedrop reload command can be used to reload the SafeDrop configuration file, and the /safedrop reportbug command can be used to report bugs or issues with the plugin.
+| Command | Description | Permission |
+| --- | --- | --- |
+| `/safedrop` | Toggle protection | `safedrop.use` |
+| `/safedrop on` | Enable protection | `safedrop.use` |
+| `/safedrop off` | Disable protection | `safedrop.use` |
+| `/safedrop status` | Show the current status | `safedrop.use` |
+| `/safedrop help` | Show player help | `safedrop.use` |
+| `/safedrop reload` | Reload the configuration | `safedrop.admin` |
 
-## Configuration
-The SafeDrop configuration file can be found at plugins/SafeDrop/config.yml. The file can be edited to customize SafeDrop's messages and settings.
+`/sd` remains available as an alias. The legacy `sd.use` and `sd.admin`
+permission nodes are retained as compatibility aliases.
 
-## Credits
-SafeDrop was developed by [CodedRed](https://github.com/CodedRed-Spigot/SafeDrop/blob/master/License).
+## Building
 
-## Support
-For support or assistance with SafeDrop, please contact the developer on the SpigotMC page or by creating an [issue](https://github.com/CodedRed-Spigot/SafeDrop/issues) on the GitHub repository.
+```bash
+./gradlew clean build
+```
+
+The deployable JAR is produced in `build/libs/`.
+
+## Licence and credits
+
+SafeDrop remains available under the MIT Licence. The original project was
+created by CodedRed Spigot and is maintained in this fork by VeridianMC.

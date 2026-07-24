@@ -1,13 +1,31 @@
 name: SafeDrop
 version: '${version}'
 main: dev.codedred.safedrop.SafeDrop
-api-version: 1.19
-authors: [ CodedRed ]
-description: Confirm drops before dropping items!
-website: www.codedred.dev
+api-version: '1.21'
+authors: [ CodedRed, VeridianMC ]
+description: Protect valuable items from accidental drops.
+website: https://github.com/VeridianMC/SafeDrop
 
 commands:
   safedrop:
     aliases: [ sd ]
-    description: "Enable/Disable the safedrop feature."
-    usage: "/sd on/off"
+    description: Manage your SafeDrop protection.
+    usage: "/safedrop [on|off|status|help|reload]"
+
+permissions:
+  safedrop.use:
+    description: Use SafeDrop and its player commands.
+    default: true
+  safedrop.admin:
+    description: Reload SafeDrop.
+    default: op
+  sd.use:
+    description: Legacy alias for safedrop.use.
+    default: false
+    children:
+      safedrop.use: true
+  sd.admin:
+    description: Legacy alias for safedrop.admin.
+    default: false
+    children:
+      safedrop.admin: true

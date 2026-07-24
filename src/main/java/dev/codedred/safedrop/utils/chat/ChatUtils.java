@@ -1,55 +1,33 @@
 package dev.codedred.safedrop.utils.chat;
 
-import java.lang.reflect.Method;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import net.md_5.bungee.api.ChatColor;
-import org.bukkit.Material;
+import dev.codedred.safedrop.SafeDrop;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 
-public class ChatUtils {
+public final class ChatUtils {
 
-  private static final Pattern HEX_PATTERN = Pattern.compile(
-    "<#([A-Fa-f0-9]){6}>"
-  );
-  private static final Method MATCH_MATERIAL_METHOD = getMatchMaterialMethod();
+  private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
 
-  private ChatUtils() {
-    throw new IllegalStateException("Utility class");
+  private ChatUtils() {}
+
+  public static Component message(SafeDrop plugin, String value) {
+    return message(plugin, value, Component.empty(), 0L);
   }
 
-  public static String format(String msg) {
-    msg = ChatColor.translateAlternateColorCodes('&', msg);
-    if (isNewerVersion()) msg = hex(msg);
-    return msg;
-  }
-
-  private static String hex(String message) {
-    Matcher matcher = HEX_PATTERN.matcher(message);
-    StringBuilder builder = new StringBuilder(message);
-    while (matcher.find()) {
-      ChatColor hexColor = ChatColor.of(
-        matcher.group().substring(1, matcher.group().length() - 1)
-      );
-      builder.replace(matcher.start(), matcher.end(), hexColor.toString());
-      matcher.reset(builder.toString());
-    }
-    return ChatColor.translateAlternateColorCodes('&', builder.toString());
-  }
-
-  private static boolean isNewerVersion() {
-    return MATCH_MATERIAL_METHOD != null;
-  }
-
-  private static Method getMatchMaterialMethod() {
-    try {
-      Class<?> class_Material = Material.class;
-      return class_Material.getDeclaredMethod(
-        "matchMaterial",
-        String.class,
-        Boolean.TYPE
-      );
-    } catch (ReflectiveOperationException ex) {
-      return null;
-    }
+  public static Component message(
+    SafeDrop plugin,
+    String value,
+    Component item,
+    long seconds
+  ) {
+    String prefix = plugin.getConfig().getString("messages.prefix", "");
+    TagResolver resolver = TagResolver.resolver(
+      Placeholder.parsed("prefix", prefix),
+      Placeholder.component("item", item),
+      Placeholder.unparsed("seconds", Long.toString(seconds))
+    );
+    return MINI_MESSAGE.deserialize(value, resolver);
   }
 }

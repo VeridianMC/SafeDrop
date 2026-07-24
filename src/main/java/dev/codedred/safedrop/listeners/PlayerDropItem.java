@@ -1,77 +1,65 @@
 package dev.codedred.safedrop.listeners;
 
-import dev.codedred.safedrop.data.DataManager;
+import dev.codedred.safedrop.SafeDrop;
 import dev.codedred.safedrop.managers.DropManager;
 import dev.codedred.safedrop.utils.chat.ChatUtils;
-import java.util.UUID;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.TextComponent;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.inventory.ItemStack;
 
-public class PlayerDropItem implements Listener {
+public final class PlayerDropItem implements Listener {
 
-  @EventHandler
-  public void onItemDrop(PlayerDropItemEvent event) {
-    if (event.getPlayer().getGameMode() == GameMode.CREATIVE) return;
-    if (!event.getPlayer().hasPermission("sd.use")) return;
+  private final SafeDrop plugin;
+  private final DropManager dropManager;
 
-    if (event.getPlayer().getInventory().firstEmpty() == -1) return;
-
-    DropManager dropManager = DropManager.getInstance();
-    DataManager dataManager = DataManager.getInstance();
-    UUID uuid = event.getPlayer().getUniqueId();
-
-    if (dropManager.hasRequested(uuid)) return;
-
-    if (dropManager.isWhitelistEnabled() && dropManager.getStatus(uuid)) {
-      ItemStack itemInHand = event.getItemDrop().getItemStack();
-      String itemName = itemInHand.getType().name();
-      boolean isEnchantedItemsWhitelisted = dropManager.isEnchantedItemsWhitelisted();
-      boolean itemEnchanted = !itemInHand.getEnchantments().isEmpty();
-
-      if (
-        dropManager.isWhitelisted(itemName) ||
-        (isEnchantedItemsWhitelisted && itemEnchanted)
-      ) {
-        event.setCancelled(true);
-        handlePlayerDrop(event.getPlayer(), uuid, dataManager, dropManager);
-      }
-    } else if (dropManager.getStatus(uuid)) {
-      event.setCancelled(true);
-      handlePlayerDrop(event.getPlayer(), uuid, dataManager, dropManager);
-    }
+  public PlayerDropItem(SafeDrop plugin, DropManager dropManager) {
+    this.plugin = plugin;
+    this.dropManager = dropManager;
   }
 
-  private void handlePlayerDrop(
-    Player player,
-    UUID uuid,
-    DataManager dataManager,
-    DropManager dropManager
-  ) {
-    dropManager.addRequest(uuid);
+  @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+  public void onItemDrop(PlayerDropItemEvent event) {
+    Player player = event.getPlayer();
+    if (!player.hasPermission("safedrop.use")) return;
+    if (
+      player.getGameMode() == GameMode.CREATIVE &&
+      !plugin.getConfig().getBoolean("safe-drop.protect-in-creative", false)
+    ) return;
+    if (!dropManager.isEnabled(player.getUniqueId())) return;
+    if (
+      player.isSneaking() &&
+      plugin.getConfig().getBoolean("safe-drop.sneak-to-bypass", true)
+    ) return;
 
-    if (dataManager.getConfig().getBoolean("safe-drop.text-message.enabled")) {
-      player.sendMessage(
-        ChatUtils.format(
-          dataManager.getConfig().getString("messages.drop-text-message")
-        )
-      );
+    ItemStack item = event.getItemDrop().getItemStack();
+    if (!dropManager.shouldProtect(item)) return;
+    if (dropManager.confirmOrRequest(player.getUniqueId(), item)) return;
+
+    event.setCancelled(true);
+    long seconds = Math.max(
+      1L,
+      plugin.getConfig().getLong("safe-drop.confirmation-seconds", 3L)
+    );
+    Component itemName = item.hasItemMeta() && item.getItemMeta().hasDisplayName()
+      ? item.getItemMeta().displayName()
+      : Component.translatable(item.translationKey()).color(NamedTextColor.WHITE);
+
+    String chat = plugin.getConfig().getString("messages.confirm-chat", "");
+    if (!chat.isBlank()) {
+      player.sendMessage(ChatUtils.message(plugin, chat, itemName, seconds));
     }
 
-    if (
-      dataManager.getConfig().getBoolean("safe-drop.actionbar-message.enabled")
-    ) {
-      TextComponent message = new TextComponent(
-        ChatUtils.format(
-          dataManager.getConfig().getString("messages.drop-actionbar-message")
-        )
-      );
-      player.spigot().sendMessage(ChatMessageType.ACTION_BAR, message);
+    String actionbar = plugin
+      .getConfig()
+      .getString("messages.confirm-actionbar", "");
+    if (!actionbar.isBlank()) {
+      player.sendActionBar(ChatUtils.message(plugin, actionbar, itemName, seconds));
     }
   }
 }

@@ -4,9 +4,10 @@ import dev.codedred.safedrop.data.database.datasource.DataSource;
 import dev.codedred.safedrop.data.database.datasource.impl.SQLite;
 import dev.codedred.safedrop.model.User;
 import dev.codedred.safedrop.utils.async.Async;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
-import lombok.val;
 
 public class UsersTable {
 
@@ -26,7 +27,8 @@ public class UsersTable {
         String.format(
           "CREATE TABLE IF NOT EXISTS `%s` (" +
           "`uniqueId` TEXT NOT NULL," +
-          "`enabled` INTEGER NOT NULL)",
+          "`enabled` INTEGER NOT NULL," +
+          "PRIMARY KEY (`uniqueId`))",
           TABLE_NAME
         );
     } else {
@@ -34,13 +36,14 @@ public class UsersTable {
         String.format(
           "CREATE TABLE IF NOT EXISTS `%s` (" +
           "`uniqueId` VARCHAR(36) NOT NULL," +
-          "`enabled` BOOLEAN NOT NULL)",
+          "`enabled` BOOLEAN NOT NULL," +
+          "PRIMARY KEY (`uniqueId`))",
           TABLE_NAME
         );
     }
 
     try (
-      val preparedStatement = dataSource
+      PreparedStatement preparedStatement = dataSource
         .getConnection()
         .prepareStatement(createTableSql)
     ) {
@@ -53,7 +56,7 @@ public class UsersTable {
   public void insert(User user) {
     Async.run(() -> {
       try (
-        val preparedStatement = dataSource
+        PreparedStatement preparedStatement = dataSource
           .getConnection()
           .prepareStatement(
             String.format(
@@ -80,7 +83,7 @@ public class UsersTable {
   public void update(User user) {
     Async.run(() -> {
       try (
-        val preparedStatement = dataSource
+        PreparedStatement preparedStatement = dataSource
           .getConnection()
           .prepareStatement(
             String.format(
@@ -105,7 +108,7 @@ public class UsersTable {
 
   public User getByUuid(UUID uuid) {
     try (
-      val preparedStatement = dataSource
+      PreparedStatement preparedStatement = dataSource
         .getConnection()
         .prepareStatement(
           String.format(
@@ -116,7 +119,7 @@ public class UsersTable {
     ) {
       preparedStatement.setString(1, uuid.toString());
 
-      try (val resultSet = preparedStatement.executeQuery()) {
+      try (ResultSet resultSet = preparedStatement.executeQuery()) {
         if (resultSet.next()) {
           boolean enabled;
           if (dataSource instanceof SQLite) {

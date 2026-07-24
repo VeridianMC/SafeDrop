@@ -1,31 +1,28 @@
 package dev.codedred.safedrop.data.database.datasource.impl;
 
 import dev.codedred.safedrop.SafeDrop;
-import dev.codedred.safedrop.data.DataManager;
 import dev.codedred.safedrop.data.database.datasource.DataSource;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import lombok.val;
 
 public class MySQL implements DataSource {
 
   private Connection connection;
 
   public MySQL(SafeDrop plugin) {
-    val config = DataManager
-      .getInstance()
+    var config = plugin
       .getConfig()
       .getConfigurationSection("database-settings");
 
-    val host = config.getString("host");
-    val port = config.getString("port");
-    val user = config.getString("user");
-    val password = config.getString("password");
-    val database = config.getString("database");
+    String host = config.getString("host");
+    String port = config.getString("port");
+    String user = config.getString("user");
+    String password = config.getString("password");
+    String database = config.getString("database");
 
-    val connectionUrl = String.format(
-      "jdbc:mysql://%s:%s/%s?autoReconnect=true",
+    String connectionUrl = String.format(
+      "jdbc:mysql://%s:%s/%s?useSSL=true&serverTimezone=UTC",
       host,
       port,
       database

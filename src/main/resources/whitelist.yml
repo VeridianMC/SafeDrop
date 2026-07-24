@@ -605,7 +605,7 @@ whitelist:
   MILK_BUCKET: false
   MINECART: false
   MOB_HEAD: false
-  MOB_SPAWNER: false
+  MOB_SPAWNER: true
   MOOSHROOM_SPAWN_EGG: false
   MOSS_BLOCK: false
   MOSS_CARPET: false

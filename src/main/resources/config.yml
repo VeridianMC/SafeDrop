@@ -1,0 +1,61 @@
+config-version: 2
+
+safe-drop:
+  # Whether protection is enabled when a player joins for the first time.
+  enabled-by-default: false
+
+  # ALL protects every item. SELECTED protects only the materials and
+  # categories configured below.
+  protection-mode: SELECTED
+
+  # How long the player has to drop the same item again.
+  confirmation-seconds: 3
+
+  # When enabled, sneaking while dropping bypasses confirmation.
+  sneak-to-bypass: false
+
+  # SafeDrop is normally disabled in Creative mode.
+  protect-in-creative: false
+
+  protected:
+    categories:
+      tools: true
+      weapons: true
+      armour: true
+      enchanted-items: true
+      named-items: true
+      shulker-boxes: true
+      spawn-eggs: false
+
+    # Bukkit material names. Invalid names are reported during startup/reload.
+    materials:
+      - ELYTRA
+      - NETHER_STAR
+      - TOTEM_OF_UNDYING
+      - TRIDENT
+      - MACE
+
+messages:
+  prefix: "<dark_gray>[<green>SafeDrop</green>]</dark_gray> "
+  confirm-chat: "<prefix><yellow>Drop <white><item></white> again within <seconds>s to confirm.</yellow>"
+  confirm-actionbar: "<yellow>Drop <white><item></white> again to confirm <dark_gray>(<seconds>s)</dark_gray></yellow>"
+  enabled: "<prefix><green>Drop protection enabled.</green>"
+  disabled: "<prefix><red>Drop protection disabled.</red>"
+  status-enabled: "<prefix><green>Drop protection is currently enabled.</green>"
+  status-disabled: "<prefix><red>Drop protection is currently disabled.</red>"
+  reloaded: "<prefix><green>Configuration reloaded.</green>"
+  no-permission: "<prefix><red>You do not have permission to do that.</red>"
+  player-only: "<prefix><red>That command can only be used by a player.</red>"
+  usage:
+    - "<green>/safedrop</green> <gray>— toggle drop protection</gray>"
+    - "<green>/safedrop on|off</green> <gray>— set drop protection</gray>"
+    - "<green>/safedrop status</green> <gray>— check drop protection</gray>"
+
+database-settings:
+  enabled: true
+  type: sqlite
+  host: localhost
+  port: 3306
+  user: root
+  password: password
+  database: safedrop

@@ -1,160 +1,104 @@
 package dev.codedred.safedrop.commands;
 
 import dev.codedred.safedrop.SafeDrop;
-import dev.codedred.safedrop.data.DataManager;
 import dev.codedred.safedrop.managers.DropManager;
 import dev.codedred.safedrop.utils.chat.ChatUtils;
-import java.util.UUID;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
-public class Drop implements CommandExecutor {
-
-  private static final String PERMISSION_USE = "sd.use";
-  private static final String PERMISSION_ADMIN = "sd.admin";
+public final class Drop implements TabExecutor {
 
   private final SafeDrop plugin;
+  private final DropManager dropManager;
 
-  public Drop(SafeDrop plugin) {
+  public Drop(SafeDrop plugin, DropManager dropManager) {
     this.plugin = plugin;
+    this.dropManager = dropManager;
   }
 
   @Override
   public boolean onCommand(
-    CommandSender sender,
-    Command command,
-    String label,
-    String[] args
+    @NotNull CommandSender sender,
+    @NotNull Command command,
+    @NotNull String label,
+    @NotNull String[] args
   ) {
-    DataManager dataManager = DataManager.getInstance();
-    if (!(sender instanceof Player player)) {
-      if (args.length >= 1 && args[0].equalsIgnoreCase("reload")) {
-        sender.sendMessage(ChatUtils.format("&dReloading config.."));
-        dataManager.reload();
-        sender.sendMessage(ChatUtils.format("&dChecking for config errors.."));
-        dataManager.checkAndFixConfigKeys();
-        if (dataManager.getConfig().getBoolean("database-settings.enabled")) {
-          sender.sendMessage(ChatUtils.format("&dReloading database.."));
-          plugin.loadDatabase();
-        }
-        sender.sendMessage(
-          ChatUtils.format("&d&lSafe Drop &dhas successfully reloaded.")
-        );
+    String subcommand = args.length == 0
+      ? "toggle"
+      : args[0].toLowerCase(Locale.ROOT);
+
+    if (subcommand.equals("reload")) {
+      if (!sender.hasPermission("safedrop.admin")) {
+        send(sender, "messages.no-permission");
         return true;
       }
-      sender.sendMessage("[SafeDrop] Commands can only be ran in-game!");
+      plugin.reloadSafeDrop();
+      send(sender, "messages.reloaded");
       return true;
     }
 
-    if (args.length != 1) {
-      sendUsage(player);
+    if (!(sender instanceof Player player)) {
+      send(sender, "messages.player-only");
+      return true;
+    }
+    if (!player.hasPermission("safedrop.use")) {
+      send(player, "messages.no-permission");
       return true;
     }
 
-    handleDatabaseDisabledCommand(player, args);
+    switch (subcommand) {
+      case "toggle" -> setStatus(player, !dropManager.isEnabled(player.getUniqueId()));
+      case "on" -> setStatus(player, true);
+      case "off" -> setStatus(player, false);
+      case "status" -> send(
+        player,
+        dropManager.isEnabled(player.getUniqueId())
+          ? "messages.status-enabled"
+          : "messages.status-disabled"
+      );
+      case "help" -> plugin
+        .getConfig()
+        .getStringList("messages.usage")
+        .forEach(line -> player.sendMessage(ChatUtils.message(plugin, line)));
+      default -> plugin
+        .getConfig()
+        .getStringList("messages.usage")
+        .forEach(line -> player.sendMessage(ChatUtils.message(plugin, line)));
+    }
     return true;
   }
 
-  private void handleDatabaseDisabledCommand(Player player, String[] args) {
-    DropManager dropManager = DropManager.getInstance();
-
-    if (!player.hasPermission(PERMISSION_USE)) {
-      sendError(player);
-      return;
-    }
-
-    switch (args[0].toUpperCase()) {
-      case "ON" -> updateDropStatus(
-        dropManager,
-        player.getUniqueId(),
-        true,
-        "messages.safedrop-on",
-        player
-      );
-      case "OFF" -> updateDropStatus(
-        dropManager,
-        player.getUniqueId(),
-        false,
-        "messages.safedrop-off",
-        player
-      );
-      default -> handleCommonCommand(player, args);
-    }
+  private void setStatus(Player player, boolean enabled) {
+    dropManager.setEnabled(player.getUniqueId(), enabled);
+    plugin.savePreference(player.getUniqueId(), enabled);
+    send(player, enabled ? "messages.enabled" : "messages.disabled");
   }
 
-  private void updateDropStatus(
-    DropManager dropManager,
-    UUID playerId,
-    boolean status,
-    String messageKey,
-    Player player
+  private void send(CommandSender sender, String path) {
+    sender.sendMessage(
+      ChatUtils.message(plugin, plugin.getConfig().getString(path, ""))
+    );
+  }
+
+  @Override
+  public List<String> onTabComplete(
+    @NotNull CommandSender sender,
+    @NotNull Command command,
+    @NotNull String alias,
+    @NotNull String[] args
   ) {
-    dropManager.addDropStatus(playerId, status);
-    sendMessageByConfigKey(player, messageKey);
-  }
-
-  private void sendMessageByConfigKey(Player player, String configKey) {
-    player.sendMessage(
-      ChatUtils.format(
-        DataManager.getInstance().getConfig().getString(configKey)
-      )
+    if (args.length != 1) return List.of();
+    List<String> options = new ArrayList<>(
+      List.of("on", "off", "status", "help")
     );
-  }
-
-  private void handleCommonCommand(Player player, String[] args) {
-    DataManager dataManager = DataManager.getInstance();
-
-    switch (args[0].toUpperCase()) {
-      case "RELOAD" -> {
-        if (player.hasPermission(PERMISSION_ADMIN)) {
-          player.sendMessage(ChatUtils.format("&dReloading config.."));
-          player.sendMessage(
-            ChatUtils.format("&dChecking for config errors..")
-          );
-          if (dataManager.getConfig().getBoolean("database-settings.enabled")) {
-            player.sendMessage(ChatUtils.format("&dReloading database.."));
-          }
-          dataManager.reload();
-          player.sendMessage(
-            ChatUtils.format("&d&lSafe Drop &dhas successfully reloaded.")
-          );
-        } else sendError(player);
-      }
-      case "REPORTBUG" -> {
-        if (player.hasPermission(PERMISSION_ADMIN)) player.sendMessage(
-          ChatUtils.format(
-            "&9Report issues here: \nhttps://github.com/CodedRed-Spigot/SafeDrop/issues"
-          )
-        ); else sendError(player);
-      }
-      default -> sendUsage(player);
-    }
-  }
-
-  private void sendUsage(Player player) {
-    for (String msg : DataManager
-      .getInstance()
-      .getConfig()
-      .getStringList("messages.usage")) player.sendMessage(
-      ChatUtils.format(msg)
-    );
-    if (player.hasPermission(PERMISSION_ADMIN)) player.sendMessage(
-      ChatUtils.format(
-        "&c&lAdmin Command:\n&c/&8sd reload &7- reloads plugin\n&c/&8sd reportbug &7- report a plugin bug"
-      )
-    );
-  }
-
-  private void sendError(Player player) {
-    player.sendMessage(
-      ChatUtils.format(
-        DataManager
-          .getInstance()
-          .getConfig()
-          .getString("messages.no-permission")
-      )
-    );
+    if (sender.hasPermission("safedrop.admin")) options.add("reload");
+    String input = args[0].toLowerCase(Locale.ROOT);
+    return options.stream().filter(value -> value.startsWith(input)).toList();
   }
 }

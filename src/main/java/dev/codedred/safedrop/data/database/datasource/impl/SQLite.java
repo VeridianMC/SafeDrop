@@ -1,25 +1,24 @@
 package dev.codedred.safedrop.data.database.datasource.impl;
 
 import dev.codedred.safedrop.SafeDrop;
-import dev.codedred.safedrop.data.DataManager;
 import dev.codedred.safedrop.data.database.datasource.DataSource;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import lombok.val;
 
 public class SQLite implements DataSource {
 
   private Connection connection;
 
   public SQLite(SafeDrop plugin) {
-    val config = DataManager.getInstance().getConfig();
-    val database = config.getString("database");
+    String database = plugin
+      .getConfig()
+      .getString("database-settings.database", "safedrop");
 
     try {
       Class.forName("org.sqlite.JDBC");
-      String url =
-        "jdbc:sqlite:" + plugin.getDataFolder() + "/" + database + ".db";
+      if (!plugin.getDataFolder().exists()) plugin.getDataFolder().mkdirs();
+      String url = "jdbc:sqlite:" + plugin.getDataFolder() + "/" + database + ".db";
       this.connection = DriverManager.getConnection(url);
       plugin.getLogger().info("Successfully connected to database.");
     } catch (SQLException | ClassNotFoundException exception) {

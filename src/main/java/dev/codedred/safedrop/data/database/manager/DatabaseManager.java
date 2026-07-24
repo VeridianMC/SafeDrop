@@ -5,9 +5,6 @@ import dev.codedred.safedrop.data.database.datasource.DataSource;
 import dev.codedred.safedrop.data.database.datasource.impl.MySQL;
 import dev.codedred.safedrop.data.database.datasource.impl.SQLite;
 import dev.codedred.safedrop.data.database.table.UsersTable;
-import lombok.Getter;
-
-@Getter
 public class DatabaseManager {
 
   private final SafeDrop plugin;
@@ -44,5 +41,13 @@ public class DatabaseManager {
       this.usersTable = new UsersTable(dataSource);
       this.usersTable.createTable();
     }
+  }
+
+  public DataSource getDataSource() {
+    return dataSource;
+  }
+
+  public UsersTable getUsersTable() {
+    return usersTable;
   }
 }
