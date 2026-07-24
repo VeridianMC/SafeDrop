@@ -3,7 +3,7 @@ name: Build
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
 
 permissions:
@@ -25,7 +25,9 @@ jobs:
           cache: gradle
 
       - name: Build SafeDrop
-        run: ./gradlew clean build
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build
 
       - name: Upload plugin JAR
         uses: actions/upload-artifact@v4
